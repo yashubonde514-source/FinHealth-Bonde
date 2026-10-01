@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('UI/Styles'); ?>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-badge">⚡</div>
+      <div class="header-text">
+        <h2>Create Savings Goal</h2>
+        <p>SaveIQ Intelligent Goal Tracker</p>
+      </div>
+    </div>
+
+    <!-- Goal Submission Form -->
+    <form id="goalForm" onsubmit="handleGoalSubmit(event)">
+      <!-- Goal Name -->
+      <div class="form-group">
+        <label for="goalName">Goal Name <span class="required">*</span></label>
+        <input 
+          type="text" 
+          id="goalName" 
+          placeholder="e.g., Emergency Fund, MacBook Pro, Japan Trip" 
+          required 
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Category & Target Amount -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category">Category <span class="required">*</span></label>
+          <select id="category" required>
+            <option value="Emergency">Emergency</option>
+            <option value="Tech" selected>Tech</option>
+            <option value="Travel">Travel</option>
+            <option value="Education">Education</option>
+            <option value="Lifestyle">Lifestyle</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="targetAmount">Target Amount ($) <span class="required">*</span></label>
+          <div class="input-icon-wrapper">
+            <span class="input-prefix">$</span>
+            <input 
+              type="number" 
+              id="targetAmount" 
+              class="input-with-prefix" 
+              placeholder="1500" 
+              min="1" 
+              step="any" 
+              required 
+              oninput="updatePreviewMetrics()"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Initial Savings & Deadline -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="initialSavings">Initial Savings ($)</label>
+          <div class="input-icon-wrapper">
+            <span class="input-prefix">$</span>
+            <input 
+              type="number" 
+              id="initialSavings" 
+              class="input-with-prefix" 
+              placeholder="0" 
+              min="0" 
+              step="any" 
+              value="0" 
+              oninput="updatePreviewMetrics()"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="deadline">Target Deadline <span class="required">*</span></label>
+          <input 
+            type="date" 
+            id="deadline" 
+            required 
+            onchange="updatePreviewMetrics()"
+          />
+        </div>
+      </div>
+
+      <!-- Alert Email -->
+      <div class="form-group">
+        <label for="alertEmail">Alert Email Address <span class="required">*</span></label>
+        <input 
+          type="email" 
+          id="alertEmail" 
+          placeholder="name@example.com" 
+          required 
+        />
+      </div>
+
+      <!-- Live Calculation Preview Card -->
+      <div class="preview-card">
+        <div class="preview-card-title">
+          <span>📊 Live Plan Projections</span>
+        </div>
+        <div class="preview-metrics">
+          <div class="preview-metric-box">
+            <div class="label">Remaining Deficit</div>
+            <div class="value" id="previewDeficit">$0.00</div>
+          </div>
+          <div class="preview-metric-box">
+            <div class="label">Days Remaining</div>
+            <div class="value" id="previewDays">-</div>
+          </div>
+          <div class="preview-metric-box">
+            <div class="label">Required Velocity</div>
+            <div class="value" id="previewRate">$0.00 / day</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" id="submitBtn" class="btn-submit">
+        <span class="spinner" id="btnSpinner"></span>
+        <span id="btnText">Save & Activate Goal</span>
+      </button>
+
+      <!-- Toast Feedback -->
+      <div id="toast" class="toast"></div>
+    </form>
+  </div>
+
+  <script>
+    // Set minimum date for deadline to tomorrow
+    window.addEventListener('DOMContentLoaded', () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const minDateStr = tomorrow.toISOString().split('T')[0];
+      const deadlineInput = document.getElementById('deadline');
+      deadlineInput.min = minDateStr;
+
+      // Default deadline = 30 days from today
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 30);
+      deadlineInput.value = defaultDate.toISOString().split('T')[0];
+      
+      updatePreviewMetrics();
+    });
+
+    // Real-time calculation of remaining deficit and required daily velocity
+    function updatePreviewMetrics() {
+      const target = parseFloat(document.getElementById('targetAmount').value) || 0;
+      const initial = parseFloat(document.getElementById('initialSavings').value) || 0;
+      const deadlineVal = document.getElementById('deadline').value;
+
+      const deficit = Math.max(0, target - initial);
+      document.getElementById('previewDeficit').innerText = '$' + deficit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      if (deadlineVal) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const targetDate = new Date(deadlineVal);
+        targetDate.setHours(0, 0, 0, 0);
+
+        const diffTime = targetDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 0) {
+          document.getElementById('previewDays').innerText = diffDays + ' days';
+          const dailyRate = deficit / diffDays;
+          document.getElementById('previewRate').innerText = '$' + dailyRate.toFixed(2) + ' / day';
+        } else {
+          document.getElementById('previewDays').innerText = '0 days';
+          document.getElementById('previewRate').innerText = '$' + deficit.toFixed(2) + ' (Due)';
+        }
+      } else {
+        document.getElementById('previewDays').innerText = '-';
+        document.getElementById('previewRate').innerText = '$0.00 / day';
+      }
+    }
+
+    // Form submission handler
+    function handleGoalSubmit(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const spinner = document.getElementById('btnSpinner');
+      const btnText = document.getElementById('btnText');
+      const toast = document.getElementById('toast');
+
+      // Client-side validations
+      const targetAmount = parseFloat(document.getElementById('targetAmount').value);
+      const initialSavings = parseFloat(document.getElementById('initialSavings').value) || 0;
+      const deadline = document.getElementById('deadline').value;
+
+      if (!targetAmount || targetAmount <= 0) {
+        showToast('Target amount must be greater than $0', false);
+        return;
+      }
+
+      if (initialSavings < 0) {
+        showToast('Initial savings cannot be negative', false);
+        return;
+      }
+
+      const payload = {
+        goalName: document.getElementById('goalName').value.trim(),
+        category: document.getElementById('category').value,
+        targetAmount: targetAmount,
+        initialSavings: initialSavings,
+        deadline: deadline,
+        alertEmail: document.getElementById('alertEmail').value.trim()
+      };
+
+      // Set Loading State
+      submitBtn.disabled = true;
+      spinner.style.display = 'inline-block';
+      btnText.innerText = 'Creating Goal...';
+      toast.style.display = 'none';
+
+      // Send to Google Apps Script Backend
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(response) {
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.innerText = 'Save & Activate Goal';
+
+            if (response && response.success) {
+              showToast('✅ ' + response.message, true);
+              document.getElementById('goalForm').reset();
+              setTimeout(function() {
+                google.script.host.close();
+              }, 1600);
+            } else {
+              showToast('⚠️ ' + (response.message || 'Failed to create goal.'), false);
+            }
+          })
+          .withFailureHandler(function(err) {
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.innerText = 'Save & Activate Goal';
+            showToast('❌ Error: ' + (err.message || err), false);
+          })
+          .createGoal(payload);
+      } else {
+        // Fallback for local preview testing
+        setTimeout(function() {
+          submitBtn.disabled = false;
+          spinner.style.display = 'none';
+          btnText.innerText = 'Save & Activate Goal';
+          showToast('✅ [Local Demo] Goal created successfully: ' + payload.goalName, true);
+        }, 800);
+      }
+    }
+
+    function showToast(msg, isSuccess) {
+      const toast = document.getElementById('toast');
+      toast.className = 'toast ' + (isSuccess ? 'success' : 'error');
+      toast.innerText = msg;
+      toast.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('UI/Styles'); ?>
+  <style>
+    .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #F59E0B, #D97706);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .advice-container {
+      background: #FFFFFF;
+      border: 1px solid #E0E7FF;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.05);
+      position: relative;
+    }
+
+    .advice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #EEF2FF;
+    }
+
+    .advice-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .advice-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #334155;
+      white-space: pre-wrap;
+    }
+
+    .goal-select-wrapper {
+      margin-bottom: 16px;
+    }
+
+    .progress-bar-bg {
+      background: #E2E8F0;
+      border-radius: 6px;
+      height: 8px;
+      width: 100%;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4F46E5, #06B6D4);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .api-key-box {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #92400E;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .api-key-box a {
+      color: #B45309;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-badge">🤖</div>
+      <div class="header-text">
+        <h2>AI Financial Recommendations</h2>
+        <p>SaveIQ & Groq Intelligent Advisory Engine</p>
+      </div>
+    </div>
+
+    <!-- API Key Notice if missing -->
+    <div id="apiKeyBanner" class="api-key-box" style="display: none;">
+      <span>💡 Groq API Key is not set. Using heuristic rules.</span>
+      <a onclick="promptSetApiKey()">Set API Key</a>
+    </div>
+
+    <!-- Goal Selector -->
+    <div class="goal-select-wrapper">
+      <label for="goalSelector">Select Savings Goal</label>
+      <select id="goalSelector" onchange="onGoalSelected()">
+        <option value="">Loading goals...</option>
+      </select>
+    </div>
+
+    <!-- Live Goal Projections Summary -->
+    <div class="preview-card" id="goalSummaryCard" style="display: none;">
+      <div class="preview-card-title">
+        <span id="cardGoalName">Goal Overview</span>
+        <span class="ai-badge" id="cardCategory">Category</span>
+      </div>
+
+      <div class="preview-metrics">
+        <div class="preview-metric-box">
+          <div class="label">Target Amount</div>
+          <div class="value" id="cardTarget">$0.00</div>
+        </div>
+        <div class="preview-metric-box">
+          <div class="label">Current Saved</div>
+          <div class="value" id="cardSaved">$0.00</div>
+        </div>
+        <div class="preview-metric-box">
+          <div class="label">Days Remaining</div>
+          <div class="value" id="cardDays">-</div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="cardProgressFill"></div>
+      </div>
+    </div>
+
+    <!-- Action Button -->
+    <button type="button" id="analyzeBtn" class="btn-submit" onclick="generateAdvice()" style="margin-top: 14px;">
+      <span class="spinner" id="analyzeSpinner"></span>
+      <span id="analyzeBtnText">⚡ Generate Groq AI Advice</span>
+    </button>
+
+    <!-- Advice Output Box -->
+    <div class="advice-container" id="adviceContainer" style="display: none;">
+      <div class="advice-header">
+        <div class="advice-title">
+          <span>🧠 Personalized Coaching</span>
+        </div>
+        <span class="ai-badge" id="aiModelBadge">Groq Llama 3.3</span>
+      </div>
+      <div class="advice-text" id="adviceContent"></div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script>
+    let currentGoals = [];
+    const preselectedGoalId = "<?= preselectedGoalId ?>";
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadGoalsList();
+      checkApiKeyStatus();
+    });
+
+    function checkApiKeyStatus() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(status) {
+            if (!status || !status.hasKey) {
+              document.getElementById('apiKeyBanner').style.display = 'flex';
+            }
+          })
+          .getStoredGroqApiKeyStatus();
+      }
+    }
+
+    function loadGoalsList() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(goals) {
+            currentGoals = goals || [];
+            populateGoalDropdown();
+          })
+          .withFailureHandler(function(err) {
+            showToast('Error loading goals: ' + err.message, false);
+          })
+          .GoalService_getAllGoals();
+      } else {
+        // Mock fallback for local testing
+        currentGoals = [
+          { goalId: 'GID-1001', goalName: 'Emergency Fund', category: 'Emergency', targetAmount: 5000, currentSavings: 2500, remainingBalance: 2500, progressPct: 0.5, daysRemaining: 45, requiredDailyRate: 55.55, status: 'ACTIVE', aiAdvice: 'Allocate $55/day.' },
+          { goalId: 'GID-1002', goalName: 'Laptop Purchase', category: 'Tech', targetAmount: 1500, currentSavings: 1200, remainingBalance: 300, progressPct: 0.8, daysRemaining: 5, requiredDailyRate: 60.00, status: 'NEARING_DEADLINE', aiAdvice: 'Final stretch!' }
+        ];
+        populateGoalDropdown();
+      }
+    }
+
+    function populateGoalDropdown() {
+      const select = document.getElementById('goalSelector');
+      select.innerHTML = '';
+
+      if (currentGoals.length === 0) {
+        select.innerHTML = '<option value="">No active goals found in sheet</option>';
+        return;
+      }
+
+      currentGoals.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.goalId;
+        opt.textContent = `${g.goalName} (${g.category}) - $${Number(g.currentSavings).toLocaleString()} of $${Number(g.targetAmount).toLocaleString()}`;
+        if (preselectedGoalId && g.goalId === preselectedGoalId) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+
+      onGoalSelected();
+    }
+
+    function onGoalSelected() {
+      const selectedId = document.getElementById('goalSelector').value;
+      const goal = currentGoals.find(g => g.goalId === selectedId);
+
+      if (!goal) {
+        document.getElementById('goalSummaryCard').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('goalSummaryCard').style.display = 'block';
+      document.getElementById('cardGoalName').innerText = goal.goalName;
+      document.getElementById('cardCategory').innerText = goal.category;
+      document.getElementById('cardTarget').innerText = '$' + Number(goal.targetAmount).toLocaleString('en-US', { minimumFractionDigits: 2 });
+      document.getElementById('cardSaved').innerText = '$' + Number(goal.currentSavings).toLocaleString('en-US', { minimumFractionDigits: 2 });
+      document.getElementById('cardDays').innerText = (goal.daysRemaining !== '' ? goal.daysRemaining + ' days' : '-');
+
+      const pct = Math.min(100, Math.max(0, (Number(goal.progressPct) || 0) * 100));
+      document.getElementById('cardProgressFill').style.width = pct + '%';
+
+      // If advice already exists in sheet, preview it
+      if (goal.aiAdvice && goal.aiAdvice.trim().length > 0 && !goal.aiAdvice.includes('Pending')) {
+        document.getElementById('adviceContainer').style.display = 'block';
+        document.getElementById('adviceContent').innerText = goal.aiAdvice;
+      } else {
+        document.getElementById('adviceContainer').style.display = 'none';
+      }
+    }
+
+    function generateAdvice() {
+      const selectedId = document.getElementById('goalSelector').value;
+      if (!selectedId) {
+        showToast('Please select a goal first.', false);
+        return;
+      }
+
+      const btn = document.getElementById('analyzeBtn');
+      const spinner = document.getElementById('analyzeSpinner');
+      const btnText = document.getElementById('analyzeBtnText');
+
+      btn.disabled = true;
+      spinner.style.display = 'inline-block';
+      btnText.innerText = 'Analyzing with Groq AI...';
+      document.getElementById('toast').style.display = 'none';
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.innerText = '⚡ Re-analyze with Groq AI';
+
+            if (res && res.success) {
+              document.getElementById('adviceContainer').style.display = 'block';
+              document.getElementById('adviceContent').innerText = res.advice;
+              document.getElementById('aiModelBadge').innerText = res.isAI ? 'Groq Llama 3.3' : 'Rule-Based Engine';
+              showToast('✅ Advice saved directly to Goals sheet (Column M)!', true);
+            } else {
+              showToast('⚠️ ' + (res.message || 'Failed to generate advice.'), false);
+            }
+          })
+          .withFailureHandler(function(err) {
+            btn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.innerText = '⚡ Generate Groq AI Advice';
+            showToast('❌ Error: ' + err.message, false);
+          })
+          .getAIAdviceForGoal(selectedId);
+      } else {
+        setTimeout(function() {
+          btn.disabled = false;
+          spinner.style.display = 'none';
+          btnText.innerText = '⚡ Re-analyze with Groq AI';
+          document.getElementById('adviceContainer').style.display = 'block';
+          document.getElementById('adviceContent').innerText = "💡 [Demo Groq Advice]\n• Save $55.55/day over 45 days.\n• Automate weekly transfers.\n• Cut discretionary spending.";
+          showToast('✅ [Demo] Advice updated!', true);
+        }, 1000);
+      }
+    }
+
+    function promptSetApiKey() {
+      const key = prompt('Enter your Groq API Key (starts with gsk_...):');
+      if (key && key.trim()) {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(res) {
+              if (res) {
+                showToast('✅ Groq API Key securely saved!', true);
+                document.getElementById('apiKeyBanner').style.display = 'none';
+              }
+            })
+            .saveGroqApiKey(key.trim());
+        } else {
+          showToast('✅ Groq API Key saved locally.', true);
+          document.getElementById('apiKeyBanner').style.display = 'none';
+        }
+      }
+    }
+
+    function showToast(msg, isSuccess) {
+      const toast = document.getElementById('toast');
+      toast.className = 'toast ' + (isSuccess ? 'success' : 'error');
+      toast.innerText = msg;
+      toast.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

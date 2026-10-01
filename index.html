@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaveIQ – AI Savings Goal Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-hover: #4338CA;
+      --primary-light: #EEF2FF;
+      --primary-gradient: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --bg-page: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --success: #10B981;
+      --success-light: #ECFDF5;
+      --warning: #F59E0B;
+      --warning-light: #FFFBEB;
+      --danger: #EF4444;
+      --danger-light: #FEF2F2;
+      --accent: #06B6D4;
+      --radius: 12px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+    }
+
+    .brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #1E293B, #4F46E5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: #FFFFFF;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #FFFFFF;
+      border-color: var(--border);
+      color: #334155;
+    }
+
+    .btn-secondary:hover {
+      background: #F8FAFC;
+      border-color: #CBD5E1;
+    }
+
+    .btn-accent {
+      background: #EEF2FF;
+      color: var(--primary);
+      border-color: #E0E7FF;
+    }
+
+    .btn-accent:hover {
+      background: #E0E7FF;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Banner */
+    .dashboard-header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .dashboard-header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0F172A;
+      letter-spacing: -0.03em;
+    }
+
+    .dashboard-header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+    }
+
+    /* KPI Cards Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--border);
+    }
+
+    .kpi-card.purple::before {
+      background: #9333EA;
+    }
+
+    .kpi-card.blue::before {
+      background: #2563EB;
+    }
+
+    .kpi-card.green::before {
+      background: #16A34A;
+    }
+
+    .kpi-card.amber::before {
+      background: #D97706;
+    }
+
+    .kpi-card.red::before {
+      background: #DC2626;
+    }
+
+    .kpi-card.cyan::before {
+      background: #0891B2;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Visual Analytics & Breakdown Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Table Card */
+    .table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .table-header-wrap {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FFFFFF;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background-color: #F8FAFC;
+      color: #475569;
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #F1F5F9;
+      color: #334155;
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background-color: #F8FAFC;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-completed {
+      background: #DCFCE7;
+      color: #166534;
+    }
+
+    .badge-active {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+
+    .badge-nearing {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    .badge-overdue {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+
+    .category-chip {
+      background: #F1F5F9;
+      color: #475569;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Mini Progress Bar */
+    .table-progress-wrap {
+      width: 120px;
+    }
+
+    .table-progress-bar {
+      height: 6px;
+      background: #E2E8F0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+
+    .table-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .progress-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Modal Overlay & Card (Matching GoalModal & AIAdviceModal) */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #FFFFFF;
+      border-radius: 16px;
+      max-width: 540px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--border);
+      animation: modalSlide 0.25s ease-out;
+    }
+
+    @keyframes modalSlide {
+      from {
+        transform: translateY(12px) scale(0.98);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease;
+    }
+
+    .btn-close:hover {
+      background: #F1F5F9;
+      color: #0F172A;
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      color: #0F172A;
+      background: #FFFFFF;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    /* Live Preview Card */
+    .preview-card {
+      background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%);
+      border: 1px solid #E0E7FF;
+      border-radius: 10px;
+      padding: 14px;
+      margin: 16px 0;
+    }
+
+    .preview-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .preview-box {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #E2E8F0;
+    }
+
+    .preview-box .label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .preview-box .val {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: #1E293B;
+      color: #FFFFFF;
+      padding: 14px 20px;
+      border-radius: 10px;
+      box-shadow: var(--shadow-xl);
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.3s ease-out;
+    }
+
+    @keyframes toastIn {
+      from {
+        transform: translateX(40px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast.success {
+      border-left: 4px solid var(--success);
+    }
+
+    .toast.info {
+      border-left: 4px solid var(--accent);
+    }
+
+    .toast.warning {
+      border-left: 4px solid var(--warning);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header Navigation -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand">
+        <div class="brand-logo">⚡</div>
+        <div>
+          <div class="brand-name">SaveIQ</div>
+          <div class="brand-sub">AI Savings Goal Tracker</div>
+        </div>
+      </a>
+      <div class="nav-actions">
+        <button class="btn btn-secondary" onclick="openApiKeyModal()">🔑 API Key</button>
+        <button class="btn btn-secondary" onclick="openAuditModal()">⏱️ Run Daily Audit</button>
+        <button class="btn btn-accent" onclick="openAIModal()">🤖 AI Advisor</button>
+        <button class="btn btn-primary" onclick="openCreateModal()">➕ Add New Goal</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Title & Status Header -->
+    <div class="dashboard-header">
+      <div>
+        <h1>Financial Performance Dashboard</h1>
+        <p>Real-time savings velocity, portfolio completion rate, and Groq AI coaching.</p>
+      </div>
+      <div>
+        <div class="status-pill" id="groqStatusPill" onclick="openApiKeyModal()" style="cursor: pointer;" title="Configure Groq Cloud API Key">
+          <div class="status-dot" id="groqStatusDot"></div>
+          <span id="groqStatusText">Groq AI: Checking status...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Executive KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card purple">
+        <div class="kpi-label">Total Goals</div>
+        <div class="kpi-value" id="kpiTotalGoals">5</div>
+        <div class="kpi-sub">Across 5 categories</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Target Capital</div>
+        <div class="kpi-value" id="kpiTargetCapital">$10,900.00</div>
+        <div class="kpi-sub">Total milestones value</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Total Saved to Date</div>
+        <div class="kpi-value" id="kpiTotalSaved">$5,300.00</div>
+        <div class="kpi-sub" id="kpiRemainingDeficit">$5,600.00 remaining</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">Overall Progress</div>
+        <div class="kpi-value" id="kpiOverallProgress">48.6%</div>
+        <div class="kpi-sub">Average portfolio velocity</div>
+      </div>
+      <div class="kpi-card cyan">
+        <div class="kpi-label">Active Goals</div>
+        <div class="kpi-value" id="kpiActiveGoals">3</div>
+        <div class="kpi-sub">On-track milestones</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Completed Goals</div>
+        <div class="kpi-value" id="kpiCompletedGoals">1</div>
+        <div class="kpi-sub">100% achieved milestones</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">Overdue Goals</div>
+        <div class="kpi-value" id="kpiOverdueGoals">1</div>
+        <div class="kpi-sub">Action required</div>
+      </div>
+      <div class="kpi-card amber">
+        <div class="kpi-label">Daily Velocity Required</div>
+        <div class="kpi-value" id="kpiDailyRate">$107.92</div>
+        <div class="kpi-sub">Per day across active goals</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="card-title">
+          <span>Target Capital Allocation by Category</span>
+          <span style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Distribution (%)</span>
+        </div>
+        <div style="height: 240px; position: relative;">
+          <canvas id="categoryDonutChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">
+          <span>Category Target vs. Current Saved</span>
+          <span style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Amounts ($)</span>
+        </div>
+        <div style="height: 240px; position: relative;">
+          <canvas id="categoryBarChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goals Ledger Table -->
+    <div class="table-card">
+      <div class="table-header-wrap">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 700; color: #0F172A;">Savings Goals Ledger</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Synchronized with Google Sheets
+            database master table.</p>
+        </div>
+        <div>
+          <button class="btn btn-secondary" onclick="renderApp()">🔄 Refresh Ledger</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Goal Name</th>
+              <th>Category</th>
+              <th>Target</th>
+              <th>Saved</th>
+              <th>Remaining</th>
+              <th>Progress</th>
+              <th>Deadline</th>
+              <th>Days Left</th>
+              <th>Daily Rate</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="goalsTableBody">
+            <!-- Populated via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL 1: CREATE GOAL (Matching GoalModal.html) -->
+  <div class="modal-overlay" id="createGoalModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span style="color: var(--primary);">⚡</span> Create Savings Goal
+        </div>
+        <button class="btn-close" onclick="closeModal('createGoalModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="goalForm" onsubmit="handleCreateGoal(event)">
+          <div class="form-group">
+            <label for="newGoalName">Goal Name <span style="color: var(--danger)">*</span></label>
+            <input type="text" id="newGoalName" placeholder="e.g., MacBook Pro, Emergency Fund" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newCategory">Category <span style="color: var(--danger)">*</span></label>
+              <select id="newCategory" required>
+                <option value="Emergency">Emergency</option>
+                <option value="Tech" selected>Tech</option>
+                <option value="Travel">Travel</option>
+                <option value="Education">Education</option>
+                <option value="Lifestyle">Lifestyle</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="newTarget">Target Amount ($) <span style="color: var(--danger)">*</span></label>
+              <input type="number" id="newTarget" placeholder="1500" min="1" step="any" required
+                oninput="updateCreatePreview()">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newInitial">Initial Savings ($)</label>
+              <input type="number" id="newInitial" placeholder="0" min="0" step="any" value="0"
+                oninput="updateCreatePreview()">
+            </div>
+            <div class="form-group">
+              <label for="newDeadline">Target Deadline <span style="color: var(--danger)">*</span></label>
+              <input type="date" id="newDeadline" required onchange="updateCreatePreview()">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="newEmail">Alert Email Address <span style="color: var(--danger)">*</span></label>
+            <input type="email" id="newEmail" placeholder="user@example.com" required>
+          </div>
+
+          <!-- Live Preview Box -->
+          <div class="preview-card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase;">
+              📊 Live Plan Projections
+            </div>
+            <div class="preview-metrics">
+              <div class="preview-box">
+                <div class="label">Remaining Deficit</div>
+                <div class="val" id="previewModalDeficit">$0.00</div>
+              </div>
+              <div class="preview-box">
+                <div class="label">Days Remaining</div>
+                <div class="val" id="previewModalDays">-</div>
+              </div>
+              <div class="preview-box">
+                <div class="label">Required Velocity</div>
+                <div class="val" id="previewModalVelocity">$0.00 / day</div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary"
+            style="width: 100%; justify-content: center; padding: 12px; margin-top: 10px;">
+            Save & Activate Goal
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: GROQ AI ADVISORY (Matching AIAdviceModal.html) -->
+  <div class="modal-overlay" id="aiAdviceModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🤖</span> Groq AI Financial Coaching
+        </div>
+        <button class="btn-close" onclick="closeModal('aiAdviceModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="aiModalKeyBanner" style="margin-bottom: 12px; font-size: 11px; padding: 8px 12px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; color: #92400E; display: flex; justify-content: space-between; align-items: center;">
+          <span id="aiModalKeyBannerText">💡 Using local heuristic demo engine.</span>
+          <a href="javascript:void(0)" onclick="openApiKeyModal()" style="font-weight: 700; color: #B45309; text-decoration: underline;">Configure API Key</a>
+        </div>
+
+        <div class="form-group">
+          <label for="aiGoalSelect">Select Savings Goal</label>
+          <select id="aiGoalSelect" onchange="onAiGoalChange()"></select>
+        </div>
+
+        <div class="preview-card" id="aiGoalCard">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700;" id="aiCardName">Goal Name</span>
+            <span class="badge badge-active" id="aiCardCategory">Category</span>
+          </div>
+          <div class="preview-metrics" style="margin-top: 10px;">
+            <div class="preview-box">
+              <div class="label">Target Amount</div>
+              <div class="val" id="aiCardTarget">$0.00</div>
+            </div>
+            <div class="preview-box">
+              <div class="label">Saved</div>
+              <div class="val" id="aiCardSaved">$0.00</div>
+            </div>
+            <div class="preview-box">
+              <div class="label">Days Left</div>
+              <div class="val" id="aiCardDays">-</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btnRunAi" onclick="generateAiAdvice()"
+          style="width: 100%; justify-content: center; padding: 12px; margin-top: 12px;">
+          ⚡ Generate Groq AI Advice
+        </button>
+
+        <div id="aiAdviceOutput"
+          style="display: none; margin-top: 16px; background: #FFFFFF; border: 1px solid #E0E7FF; border-radius: 12px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 13px; font-weight: 700; color: var(--primary);">🧠 Actionable Financial
+              Guidance:</span>
+            <span class="badge" style="background: #FEF3C7; color: #92400E;" id="aiEngineBadge">Groq Llama 3.3</span>
+          </div>
+          <div id="aiAdviceText" style="font-size: 13px; line-height: 1.6; color: #334155; white-space: pre-wrap;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: AUDIT & TRANSACTIONAL EMAIL SIMULATOR -->
+  <div class="modal-overlay" id="auditModal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>⏱️</span> Daily Background Audit Simulator
+        </div>
+        <button class="btn-close" onclick="closeModal('auditModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+          Simulates the automated 08:00 AM daily cron trigger. Evaluates goal deadlines, transitions states, and
+          generates transactional email alerts.
+        </p>
+
+        <button class="btn btn-primary" onclick="runSimulatedAudit()"
+          style="width: 100%; justify-content: center; padding: 12px;">
+          ▶️ Execute Audit Now
+        </button>
+
+        <div id="auditResults" style="display: none; margin-top: 18px;">
+          <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #0F172A;">Audit Execution Log:</h4>
+          <div id="auditLogText"
+            style="font-size: 12px; background: #F8FAFC; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; line-height: 1.5; max-height: 140px; overflow-y: auto;">
+          </div>
+
+          <div style="margin-top: 16px;">
+            <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #0F172A;">Sample Dispatched
+              Transactional Email:</h4>
+            <div id="emailPreviewBox"
+              style="border: 1px solid #CBD5E1; border-radius: 10px; overflow: hidden; max-height: 280px; overflow-y: auto;">
+              <!-- Embedded HTML Email Preview -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: GROQ API KEY CONFIGURATION -->
+  <div class="modal-overlay" id="apiKeyModal">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔑</span> Groq Cloud API Key
+        </div>
+        <button class="btn-close" onclick="closeModal('apiKeyModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #EEF2FF; border: 1px solid #E0E7FF; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="font-size: 20px;">⚡</span>
+            <div style="font-size: 12px; color: #334155; line-height: 1.5;">
+              <strong>Real-Time Llama 3.3 Inference:</strong> Add your Groq API key for sub-second, intelligent financial coaching.
+              Keys are free at <a href="https://console.groq.com/keys" target="_blank" style="color: var(--primary); font-weight: 700; text-decoration: underline;">console.groq.com</a> (no card required).
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="groqApiKeyInput">Groq API Key (starts with gsk_)</label>
+          <div style="position: relative;">
+            <input type="password" id="groqApiKeyInput" placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx" style="padding-right: 40px; font-family: monospace;">
+            <button type="button" onclick="toggleApiKeyVisibility()" id="btnToggleVisibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; color: #64748B;" title="Show/Hide">👁️</button>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
+            Stored in your browser's localStorage or server environment.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="groqModelSelect">Model Engine</label>
+          <select id="groqModelSelect">
+            <option value="llama-3.3-70b-versatile" selected>llama-3.3-70b-versatile (Recommended - 70B reasoning)</option>
+            <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Ultra-fast)</option>
+            <option value="mixtral-8x7b-32768">mixtral-8x7b-32768 (MoE Architecture)</option>
+          </select>
+        </div>
+
+        <div id="apiKeyTestResult" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-bottom: 16px;"></div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" id="btnTestKey" onclick="testApiKey()" style="flex: 1; justify-content: center;">
+            🧪 Test Connection
+          </button>
+          <button type="button" class="btn btn-primary" onclick="saveApiKey()" style="flex: 1; justify-content: center;">
+            💾 Save API Key
+          </button>
+        </div>
+
+        <div style="margin-top: 14px; text-align: center;">
+          <button type="button" onclick="clearApiKey()" style="background: none; border: none; font-size: 12px; color: #DC2626; cursor: pointer; text-decoration: underline;">
+            🗑️ Clear Key (Revert to Demo Mode)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Logic -->
+  <script>
+    // State Store (Preloaded with representative Scenario data)
+    let goals = [
+      {
+        goalId: 'GID-1001',
+        goalName: 'Emergency Reserve',
+        category: 'Emergency',
+        targetAmount: 5000,
+        currentSavings: 2500,
+        deadline: '2026-12-31',
+        alertEmail: 'alex@example.com',
+        aiAdvice: 'Strategy for Emergency Reserve (Emergency):\n• Target Velocity: Save $31.25/day ($218.75/week) over the next 80 days.\n• Budget Adjustment: Automate weekly transfers on payday to prevent discretionary leakage.\n• Category Optimization: Audit non-essential expenses to accelerate timeline.'
+      },
+      {
+        goalId: 'GID-1002',
+        goalName: 'MacBook Pro M3',
+        category: 'Tech',
+        targetAmount: 1800,
+        currentSavings: 1500,
+        deadline: '2026-10-06',
+        alertEmail: 'alex@example.com',
+        aiAdvice: '⚡ Final stretch! With only 5 days remaining, an allocation of $60.00/day is required. Consider a temporary 7-day spending freeze on dining to hit 100% on schedule.'
+      },
+      {
+        goalId: 'GID-1003',
+        goalName: 'European Vacation',
+        category: 'Travel',
+        targetAmount: 3000,
+        currentSavings: 600,
+        deadline: '2026-09-20',
+        alertEmail: 'alex@example.com',
+        aiAdvice: '⚠️ This goal is past its target deadline with $2,400.00 remaining. Recommend extending the target date by 45-60 days and setting up a dedicated auto-transfer.'
+      },
+      {
+        goalId: 'GID-1004',
+        goalName: 'AI Cloud Certification',
+        category: 'Education',
+        targetAmount: 600,
+        currentSavings: 600,
+        deadline: '2026-11-20',
+        alertEmail: 'alex@example.com',
+        aiAdvice: '🎉 Congratulations! You have achieved 100% of your savings goal. Consider allocating surplus funds toward your next priority objective.'
+      },
+      {
+        goalId: 'GID-1005',
+        goalName: 'Electric Commuter Scooter',
+        category: 'Lifestyle',
+        targetAmount: 500,
+        currentSavings: 100,
+        deadline: '2026-10-25',
+        alertEmail: 'alex@example.com',
+        aiAdvice: 'Strategy for Electric Commuter Scooter (Lifestyle):\n• Save $16.67/day over 24 days.\n• Cut discretionary weekend shopping by 20% to reach target effortlessly.'
+      }
+    ];
+
+    let donutChartInstance = null;
+    let barChartInstance = null;
+
+    // Initialize App
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set default deadline to +30 days
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      document.getElementById('newDeadline').value = d.toISOString().split('T')[0];
+
+      renderApp();
+      updateCreatePreview();
+      syncApiKeyStatus();
+    });
+
+    // Helper: Compute Goal Metrics
+    function computeGoal(g) {
+      const target = Number(g.targetAmount) || 0;
+      const saved = Number(g.currentSavings) || 0;
+      const remaining = Math.max(0, target - saved);
+      const progress = target > 0 ? Math.min(1, saved / target) : 0;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const deadlineDate = new Date(g.deadline);
+      deadlineDate.setHours(0, 0, 0, 0);
+
+      const diffTime = deadlineDate - today;
+      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      const dailyRate = (daysLeft > 0 && remaining > 0) ? (remaining / daysLeft) : 0;
+
+      let status = 'ACTIVE';
+      if (progress >= 1.0) status = 'COMPLETED';
+      else if (daysLeft < 0) status = 'OVERDUE';
+      else if (daysLeft <= 7) status = 'NEARING_DEADLINE';
+
+      return {
+        ...g,
+        remaining,
+        progress,
+        daysLeft,
+        dailyRate,
+        status
+      };
+    }
+
+    // Render Everything
+    function renderApp() {
+      const computed = goals.map(computeGoal);
+
+      // 1. KPI Calculations
+      const totalGoals = computed.length;
+      const totalTarget = computed.reduce((s, g) => s + g.targetAmount, 0);
+      const totalSaved = computed.reduce((s, g) => s + g.currentSavings, 0);
+      const remainingDeficit = Math.max(0, totalTarget - totalSaved);
+      const overallProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+
+      const activeCount = computed.filter(g => g.status === 'ACTIVE' || g.status === 'NEARING_DEADLINE').length;
+      const completedCount = computed.filter(g => g.status === 'COMPLETED').length;
+      const overdueCount = computed.filter(g => g.status === 'OVERDUE').length;
+      const dailyRateTotal = computed.filter(g => g.status === 'ACTIVE' || g.status === 'NEARING_DEADLINE').reduce((s, g) => s + g.dailyRate, 0);
+
+      document.getElementById('kpiTotalGoals').innerText = totalGoals;
+      document.getElementById('kpiTargetCapital').innerText = '$' + totalTarget.toLocaleString('en-US', { minimumFractionDigits: 2 });
+      document.getElementById('kpiTotalSaved').innerText = '$' + totalSaved.toLocaleString('en-US', { minimumFractionDigits: 2 });
+      document.getElementById('kpiRemainingDeficit').innerText = '$' + remainingDeficit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' remaining';
+      document.getElementById('kpiOverallProgress').innerText = overallProgress.toFixed(1) + '%';
+      document.getElementById('kpiActiveGoals').innerText = activeCount;
+      document.getElementById('kpiCompletedGoals').innerText = completedCount;
+      document.getElementById('kpiOverdueGoals').innerText = overdueCount;
+      document.getElementById('kpiDailyRate').innerText = '$' + dailyRateTotal.toFixed(2);
+
+      // 2. Render Table
+      const tbody = document.getElementById('goalsTableBody');
+      tbody.innerHTML = '';
+
+      computed.forEach(g => {
+        const tr = document.createElement('tr');
+
+        let statusBadgeClass = 'badge-active';
+        if (g.status === 'COMPLETED') statusBadgeClass = 'badge-completed';
+        else if (g.status === 'OVERDUE') statusBadgeClass = 'badge-overdue';
+        else if (g.status === 'NEARING_DEADLINE') statusBadgeClass = 'badge-nearing';
+
+        const pct = (g.progress * 100).toFixed(0);
+
+        tr.innerHTML = `
+          <td class="font-mono" style="font-weight: 600; color: #64748B;">${g.goalId}</td>
+          <td style="font-weight: 600; color: #0F172A;">${escapeHtml(g.goalName)}</td>
+          <td><span class="category-chip">${g.category}</span></td>
+          <td class="font-mono">$${g.targetAmount.toLocaleString()}</td>
+          <td class="font-mono" style="color: #16A34A; font-weight: 600;">$${g.currentSavings.toLocaleString()}</td>
+          <td class="font-mono" style="color: ${g.remaining > 0 ? '#DC2626' : '#64748B'}">$${g.remaining.toLocaleString()}</td>
+          <td>
+            <div class="table-progress-wrap">
+              <div class="table-progress-bar">
+                <div class="table-progress-fill" style="width: ${pct}%;"></div>
+              </div>
+              <div class="progress-text">${pct}%</div>
+            </div>
+          </td>
+          <td>${g.deadline}</td>
+          <td style="font-weight: 600; color: ${g.daysLeft < 0 ? '#DC2626' : (g.daysLeft <= 7 ? '#D97706' : '#334155')}">
+            ${g.daysLeft < 0 ? Math.abs(g.daysLeft) + 'd overdue' : (g.daysLeft === 0 ? 'Due Today' : g.daysLeft + ' days')}
+          </td>
+          <td class="font-mono" style="color: #4F46E5; font-weight: 600;">$${g.dailyRate.toFixed(2)}/d</td>
+          <td><span class="badge ${statusBadgeClass}">${g.status}</span></td>
+          <td>
+            <button class="btn btn-accent" style="padding: 4px 8px; font-size: 11px;" onclick="openAIModalForGoal('${g.goalId}')">🤖 Advice</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 3. Render Charts
+      renderCharts(computed);
+    }
+
+    // Render Chart.js visual charts
+    function renderCharts(computed) {
+      const categories = ['Emergency', 'Tech', 'Travel', 'Education', 'Lifestyle'];
+      const catTargets = categories.map(c => computed.filter(g => g.category === c).reduce((s, g) => s + g.targetAmount, 0));
+      const catSaved = categories.map(c => computed.filter(g => g.category === c).reduce((s, g) => s + g.currentSavings, 0));
+
+      // Donut Chart
+      const donutCtx = document.getElementById('categoryDonutChart').getContext('2d');
+      if (donutChartInstance) donutChartInstance.destroy();
+      donutChartInstance = new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+          labels: categories,
+          datasets: [{
+            data: catTargets,
+            backgroundColor: ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B', '#EC4899'],
+            borderWidth: 2,
+            borderColor: '#FFFFFF'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Inter', size: 11 } } }
+          },
+          cutout: '65%'
+        }
+      });
+
+      // Bar Chart
+      const barCtx = document.getElementById('categoryBarChart').getContext('2d');
+      if (barChartInstance) barChartInstance.destroy();
+      barChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: categories,
+          datasets: [
+            { label: 'Target ($)', data: catTargets, backgroundColor: '#4F46E5', borderRadius: 4 },
+            { label: 'Saved ($)', data: catSaved, backgroundColor: '#10B981', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 11 } } }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // Modal Handlers
+    function openCreateModal() {
+      document.getElementById('createGoalModal').classList.add('active');
+    }
+
+    function openAIModal() {
+      populateAiModalDropdown();
+      document.getElementById('aiAdviceModal').classList.add('active');
+    }
+
+    function openAIModalForGoal(goalId) {
+      populateAiModalDropdown(goalId);
+      document.getElementById('aiAdviceModal').classList.add('active');
+    }
+
+    function openAuditModal() {
+      document.getElementById('auditModal').classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Create Goal Live Projection Preview
+    function updateCreatePreview() {
+      const target = parseFloat(document.getElementById('newTarget').value) || 0;
+      const initial = parseFloat(document.getElementById('newInitial').value) || 0;
+      const deadline = document.getElementById('newDeadline').value;
+
+      const deficit = Math.max(0, target - initial);
+      document.getElementById('previewModalDeficit').innerText = '$' + deficit.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+      if (deadline) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tDate = new Date(deadline);
+        tDate.setHours(0, 0, 0, 0);
+        const diff = Math.ceil((tDate - today) / (1000 * 60 * 60 * 24));
+        if (diff > 0) {
+          document.getElementById('previewModalDays').innerText = diff + ' days';
+          document.getElementById('previewModalVelocity').innerText = '$' + (deficit / diff).toFixed(2) + ' / day';
+        } else {
+          document.getElementById('previewModalDays').innerText = '0 days';
+          document.getElementById('previewModalVelocity').innerText = '$' + deficit.toFixed(2) + ' (Due)';
+        }
+      }
+    }
+
+    // Handle Goal Submission
+    function handleCreateGoal(e) {
+      e.preventDefault();
+      const name = document.getElementById('newGoalName').value.trim();
+      const category = document.getElementById('newCategory').value;
+      const target = parseFloat(document.getElementById('newTarget').value);
+      const initial = parseFloat(document.getElementById('newInitial').value) || 0;
+      const deadline = document.getElementById('newDeadline').value;
+      const email = document.getElementById('newEmail').value.trim();
+
+      const newId = 'GID-' + Math.floor(1000 + Math.random() * 9000);
+      goals.push({
+        goalId: newId,
+        goalName: name,
+        category: category,
+        targetAmount: target,
+        currentSavings: initial,
+        deadline: deadline,
+        alertEmail: email,
+        aiAdvice: 'Click AI Advice to generate personalized coaching.'
+      });
+
+      renderApp();
+      closeModal('createGoalModal');
+      document.getElementById('goalForm').reset();
+      showToast(`✅ Goal "${name}" created with ID ${newId}!`, 'success');
+    }
+
+    // Populate AI Advisor Dropdown
+    function populateAiModalDropdown(selectedGoalId) {
+      const select = document.getElementById('aiGoalSelect');
+      select.innerHTML = '';
+      goals.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.goalId;
+        opt.textContent = `${g.goalName} (${g.category}) - Target: $${g.targetAmount.toLocaleString()}`;
+        if (selectedGoalId && g.goalId === selectedGoalId) opt.selected = true;
+        select.appendChild(opt);
+      });
+      onAiGoalChange();
+    }
+
+    function onAiGoalChange() {
+      const id = document.getElementById('aiGoalSelect').value;
+      const g = goals.map(computeGoal).find(x => x.goalId === id);
+      if (!g) return;
+
+      document.getElementById('aiCardName').innerText = g.goalName;
+      document.getElementById('aiCardCategory').innerText = g.category;
+      document.getElementById('aiCardTarget').innerText = '$' + g.targetAmount.toLocaleString();
+      document.getElementById('aiCardSaved').innerText = '$' + g.currentSavings.toLocaleString();
+      document.getElementById('aiCardDays').innerText = g.daysLeft + ' days';
+
+      if (g.aiAdvice && !g.aiAdvice.includes('Click')) {
+        document.getElementById('aiAdviceOutput').style.display = 'block';
+        document.getElementById('aiAdviceText').innerText = g.aiAdvice;
+      } else {
+        document.getElementById('aiAdviceOutput').style.display = 'none';
+      }
+    }
+
+    // API Key Management Functions
+    function openApiKeyModal() {
+      const savedKey = localStorage.getItem('GROQ_API_KEY') || '';
+      const savedModel = localStorage.getItem('GROQ_MODEL') || 'llama-3.3-70b-versatile';
+      document.getElementById('groqApiKeyInput').value = savedKey;
+      document.getElementById('groqModelSelect').value = savedModel;
+      document.getElementById('apiKeyTestResult').style.display = 'none';
+      document.getElementById('apiKeyModal').classList.add('active');
+    }
+
+    function toggleApiKeyVisibility() {
+      const input = document.getElementById('groqApiKeyInput');
+      const btn = document.getElementById('btnToggleVisibility');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerText = '🔒';
+      } else {
+        input.type = 'password';
+        btn.innerText = '👁️';
+      }
+    }
+
+    async function testApiKey() {
+      const key = document.getElementById('groqApiKeyInput').value.trim();
+      const resBox = document.getElementById('apiKeyTestResult');
+      const btn = document.getElementById('btnTestKey');
+      if (!key) {
+        resBox.style.display = 'block';
+        resBox.style.background = '#FEE2E2';
+        resBox.style.border = '1px solid #FCA5A5';
+        resBox.style.color = '#991B1B';
+        resBox.innerText = '⚠️ Please enter an API key to test.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Testing...';
+      resBox.style.display = 'none';
+
+      try {
+        const resp = await fetch('/api/groq/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: key })
+        });
+        const data = await resp.json();
+        resBox.style.display = 'block';
+        if (data.success) {
+          resBox.style.background = '#ECFDF5';
+          resBox.style.border = '1px solid #A7F3D0';
+          resBox.style.color = '#065F46';
+          resBox.innerText = '✅ Connection successful! Groq API key is verified and active.';
+        } else {
+          resBox.style.background = '#FEE2E2';
+          resBox.style.border = '1px solid #FCA5A5';
+          resBox.style.color = '#991B1B';
+          resBox.innerText = '❌ Error: ' + (data.error || 'Failed to authenticate with Groq.');
+        }
+      } catch (err) {
+        resBox.style.display = 'block';
+        resBox.style.background = '#FEE2E2';
+        resBox.style.border = '1px solid #FCA5A5';
+        resBox.style.color = '#991B1B';
+        resBox.innerText = '❌ Network test failed: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🧪 Test Connection';
+      }
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('groqApiKeyInput').value.trim();
+      const model = document.getElementById('groqModelSelect').value;
+      if (key) {
+        localStorage.setItem('GROQ_API_KEY', key);
+        localStorage.setItem('GROQ_MODEL', model);
+        showToast('🔑 Groq API key saved successfully!', 'success');
+      } else {
+        localStorage.removeItem('GROQ_API_KEY');
+        showToast('ℹ️ Empty key saved. Using demo mode.', 'info');
+      }
+      closeModal('apiKeyModal');
+      syncApiKeyStatus();
+    }
+
+    function clearApiKey() {
+      localStorage.removeItem('GROQ_API_KEY');
+      document.getElementById('groqApiKeyInput').value = '';
+      showToast('🗑️ API Key removed. Reverted to Demo Mode.', 'info');
+      closeModal('apiKeyModal');
+      syncApiKeyStatus();
+    }
+
+    async function syncApiKeyStatus() {
+      const localKey = localStorage.getItem('GROQ_API_KEY');
+      const localModel = localStorage.getItem('GROQ_MODEL') || 'llama-3.3-70b-versatile';
+      const statusDot = document.getElementById('groqStatusDot');
+      const statusText = document.getElementById('groqStatusText');
+      const banner = document.getElementById('aiModalKeyBanner');
+      const bannerText = document.getElementById('aiModalKeyBannerText');
+
+      let hasKey = Boolean(localKey && localKey.trim().length > 0);
+
+      if (!hasKey) {
+        try {
+          const resp = await fetch('/api/groq/status');
+          const data = await resp.json();
+          if (data && data.hasEnvKey) {
+            hasKey = true;
+          }
+        } catch (e) {}
+      }
+
+      if (hasKey) {
+        statusDot.style.background = '#10B981';
+        statusText.innerText = `Groq AI: ${localModel} (Connected)`;
+        if (banner) {
+          banner.style.background = '#ECFDF5';
+          banner.style.borderColor = '#A7F3D0';
+          banner.style.color = '#065F46';
+          bannerText.innerText = `🟢 Live Groq Cloud AI Connected (${localModel})`;
+        }
+      } else {
+        statusDot.style.background = '#F59E0B';
+        statusText.innerText = `Groq AI: Demo Mode (Click to Add Key)`;
+        if (banner) {
+          banner.style.background = '#FFFBEB';
+          banner.style.borderColor = '#FDE68A';
+          banner.style.color = '#92400E';
+          bannerText.innerText = `💡 Using local heuristic demo engine.`;
+        }
+      }
+    }
+
+    // Generate AI Advice (Live Groq Cloud with Heuristic Fallback)
+    async function generateAiAdvice() {
+      const id = document.getElementById('aiGoalSelect').value;
+      const btn = document.getElementById('btnRunAi');
+      const engineBadge = document.getElementById('aiEngineBadge');
+      btn.disabled = true;
+      btn.innerText = '⚡ Consulting Groq Cloud AI...';
+
+      const g = goals.map(computeGoal).find(x => x.goalId === id);
+      if (!g) {
+        btn.disabled = false;
+        btn.innerText = '⚡ Generate Groq AI Advice';
+        return;
+      }
+
+      const apiKey = localStorage.getItem('GROQ_API_KEY');
+      const model = localStorage.getItem('GROQ_MODEL') || 'llama-3.3-70b-versatile';
+
+      let generatedAdvice = '';
+      let isLiveAI = false;
+
+      // Attempt live Groq Cloud call
+      try {
+        const res = await fetch('/api/groq/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apiKey: apiKey || undefined,
+            model: model,
+            messages: [
+              {
+                role: 'system',
+                content: "You are SaveIQ Financial Advisor, an empathetic yet strictly disciplined financial coach. Given the user's savings goal, target amount, current savings, days remaining, and required daily savings rate, provide concise, realistic, high-impact strategies to hit the target. Highlight practical budget tweaks. Keep advice under 110 words with 2-3 bullet points."
+              },
+              {
+                role: 'user',
+                content: `Goal: ${g.goalName}\nCategory: ${g.category}\nTarget: $${g.targetAmount}\nCurrent Savings: $${g.currentSavings}\nRemaining Deficit: $${g.remaining}\nDays Remaining: ${g.daysLeft}\nRequired Daily Rate: $${g.dailyRate.toFixed(2)}/day`
+              }
+            ],
+            temperature: 0.5,
+            max_tokens: 300
+          })
+        });
+
+        const data = await res.json();
+        if (data.success && data.content) {
+          generatedAdvice = data.content.trim();
+          isLiveAI = true;
+          engineBadge.innerText = `Groq ${data.model || model}`;
+          engineBadge.style.background = '#ECFDF5';
+          engineBadge.style.color = '#065F46';
+        }
+      } catch (err) {
+        console.warn('Groq live call failed or key absent, falling back to heuristic engine:', err);
+      }
+
+      // Fallback heuristic if live AI not available
+      if (!generatedAdvice) {
+        engineBadge.innerText = 'Heuristic Engine (Offline)';
+        engineBadge.style.background = '#FEF3C7';
+        engineBadge.style.color = '#92400E';
+
+        if (g.progress >= 1.0) {
+          generatedAdvice = '🎉 100% Accomplished! Outstanding discipline. Allocate monthly surplus to your next priority target.';
+        } else if (g.daysLeft < 0) {
+          generatedAdvice = `⚠️ Overdue Notice: Deficit is $${g.remaining.toFixed(2)}. Recommend extending target deadline by 45 days and automating $${(g.remaining / 45).toFixed(2)}/day transfers.`;
+        } else if (g.daysLeft <= 7) {
+          generatedAdvice = `⚡ Urgent 7-Day Sprint: Only ${g.daysLeft} days left! Save $${g.dailyRate.toFixed(2)}/day by pausing discretionary entertainment and takeout this week.`;
+        } else {
+          generatedAdvice = `💡 Groq Financial Strategy for ${g.goalName} (${g.category}):\n• Target Velocity: Save $${g.dailyRate.toFixed(2)}/day ($${(g.dailyRate * 7).toFixed(2)}/week) across next ${g.daysLeft} days.\n• Budget Adjustment: Set automated payday deposits to curb lifestyle creep.\n• Optimization: Audit recurring subscriptions in ${g.category}.`;
+        }
+      }
+
+      btn.disabled = false;
+      btn.innerText = '⚡ Re-analyze with Groq AI';
+
+      // Save back
+      const targetGoal = goals.find(x => x.goalId === id);
+      if (targetGoal) targetGoal.aiAdvice = generatedAdvice;
+
+      document.getElementById('aiAdviceOutput').style.display = 'block';
+      document.getElementById('aiAdviceText').innerText = generatedAdvice;
+
+      if (isLiveAI) {
+        showToast('🧠 Live Groq Cloud AI generated fresh personalized advice!', 'success');
+      } else {
+        showToast('💡 Generated via offline heuristic engine. (Add Groq API key for live LLM)', 'info');
+      }
+    }
+
+    // Simulate Daily Audit Cron
+    function runSimulatedAudit() {
+      const computed = goals.map(computeGoal);
+      const nearing = computed.filter(g => g.status === 'NEARING_DEADLINE');
+      const overdue = computed.filter(g => g.status === 'OVERDUE');
+      const completed = computed.filter(g => g.status === 'COMPLETED');
+
+      const log = [
+        `[08:00:00 AM] Trigger: DAILY_CRON started.`,
+        `[08:00:01 AM] Audited ${computed.length} total goals.`,
+        `[08:00:02 AM] Overdue goals flagged: ${overdue.length}`,
+        `[08:00:03 AM] Nearing deadline goals flagged: ${nearing.length}`,
+        `[08:00:04 AM] Dispatched transactional email alert to: ${nearing[0]?.alertEmail || 'alex@example.com'}`,
+        `[08:00:05 AM] Audit logs appended to Audit_Logs sheet.`,
+        `[08:00:06 AM] Executive Dashboard KPIs refreshed.`
+      ];
+
+      document.getElementById('auditResults').style.display = 'block';
+      document.getElementById('auditLogText').innerText = log.join('\n');
+
+      // Sample Email Preview
+      const sampleGoal = nearing[0] || computed[0];
+      document.getElementById('emailPreviewBox').innerHTML = `
+        <div style="background: #1E293B; color: #FFFFFF; padding: 16px; font-weight: 700; font-size: 14px;">
+          ⚡ SaveIQ Alert: Only ${sampleGoal.daysLeft} days left for "${escapeHtml(sampleGoal.goalName)}"!
+        </div>
+        <div style="padding: 16px; background: #FFFFFF; font-size: 13px; line-height: 1.5; color: #334155;">
+          <p><strong>Hi Alex,</strong></p>
+          <p>Your goal <strong>${escapeHtml(sampleGoal.goalName)}</strong> is nearing its target deadline on <strong>${sampleGoal.deadline}</strong>.</p>
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 10px; margin: 12px 0;">
+            <div>Target: <strong>$${sampleGoal.targetAmount.toLocaleString()}</strong></div>
+            <div>Current Savings: <strong>$${sampleGoal.currentSavings.toLocaleString()}</strong></div>
+            <div>Remaining Deficit: <strong style="color: #DC2626;">$${sampleGoal.remaining.toLocaleString()}</strong></div>
+            <div>Required Daily Velocity: <strong style="color: #4F46E5;">$${sampleGoal.dailyRate.toFixed(2)} / day</strong></div>
+          </div>
+          <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px; padding: 10px; color: #92400E; font-size: 12px;">
+            ⚡ <strong>AI Strategy:</strong> Save $${sampleGoal.dailyRate.toFixed(2)}/day to finish on schedule!
+          </div>
+        </div>
+      `;
+
+      showToast('⏱️ Audit completed! 1 transactional alert email dispatched.', 'success');
+      renderApp();
+    }
+
+    // Helper: Toast notification
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+
+</html>

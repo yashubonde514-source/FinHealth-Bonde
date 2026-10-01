@@ -1,0 +1,23 @@
+{
+  "name": "finhealth-saveiq",
+  "version": "1.0.0",
+  "description": "SaveIQ – AI-Powered Personal Savings Goal Tracker & Financial Performance Dashboard with Groq Cloud LLM Integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/test_phase6_e2e.js",
+    "test:all": "node tests/test_phase1.js && node tests/test_phase2.js && node tests/test_phase3.js && node tests/test_phase4.js && node tests/test_phase5.js && node tests/test_phase6_e2e.js"
+  },
+  "keywords": [
+    "fintech",
+    "personal-finance",
+    "savings-tracker",
+    "google-apps-script",
+    "groq-cloud",
+    "llama-3.3",
+    "dashboard",
+    "charts"
+  ],
+  "author": "Yash Bonde",
+  "license": "MIT"
+}
